@@ -1,3 +1,21 @@
+/*
+ * A CLI client for Twitter.
+ * Copyright (C) 2018 kilometers
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -11,6 +29,7 @@
 
 #include "user.h"
 #include "colors.h"
+#include "gpl.h"
 
 // ┌─┬─┐
 // │ │ │
@@ -44,6 +63,7 @@ void print_help(void) {
         BOLD "COMMANDS\n" RESET
         "   show     displays something on the screen\n"
         "   search   searches for a query\n"
+        "   gpl      outputs information about the GNU Genneral Public License\n"
         "   help     shows this help message\n"
         "   exit     exits this application\n"
         BOLD "ALIASES\n" RESET
@@ -75,6 +95,8 @@ int main(int argc, char *argv[]) {
     // what happened in previous iterations
     bool show;
     bool toplevel;
+    bool gpl;
+    bool error;
 
     // used for error messages
     int token_offset;
@@ -82,16 +104,22 @@ int main(int argc, char *argv[]) {
     char *command;
     char *command_copy;
 
+    char *output_queue;
+
     // read-eval-print loop
     while(true) {
         command = readline(BOLD "twitter" GREEN " ) " RESET);
         add_history(command);
+
+        output_queue = "";
 
         token_offset = 0;
 
         // reset flags
         show = false;
         toplevel = true;
+        gpl = false;
+        error = false;
         
         // create copy of command for error messages
         command_copy = (char*) malloc(strlen(command));
@@ -107,6 +135,9 @@ int main(int argc, char *argv[]) {
                 } else if (!strcmp(token, "show")) {
                     show = true;
                 } else if (!strcmp(token, "search")) {
+                } else if (!strcmp(token, "gpl")) {
+                    output_queue = gpl_snippit();
+                    gpl = true;
                 } else {
                     executed_command = false;
                 }
@@ -120,16 +151,36 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            printf("token offset: %d\n", token_offset);
+            bool command_not_executed = true;
 
-            if (!strcmp(token, "trending") && show) {
-                printf("trending\n");
-                // break;
-            } else if (!strcmp(token, "me") && show) {
-                user_print(user);
-            } else if (token[0] == '@' && show) {
-                printf("elon musk\n");
-            } else {
+            if(gpl && command_not_executed) {
+                command_not_executed = false;
+                if (!strcmp(token, "warranty")) {
+                    output_queue = gpl_warranty();
+                } else if (!strcmp(token, "conditions")) {
+                    output_queue = gpl_terms_and_conditions();
+                } else {
+                    command_not_executed = true;
+                    error = true;
+                }
+            }
+
+            if (command_not_executed) {
+                command_not_executed = false;
+                if (!strcmp(token, "trending") && show) {
+                    printf("trending\n");
+                    // break;
+                } else if (!strcmp(token, "me") && show) {
+                    user_print(user);
+                } else if (token[0] == '@' && show) {
+                    printf("elon musk\n");
+                } else {
+                    command_not_executed = true;
+                    error = true;
+                }
+            }
+            
+            if (command_not_executed || error) {
                 if(token_offset > strlen(command_copy))
                     token_offset = strlen(command_copy);
                 if(toplevel)
@@ -166,7 +217,7 @@ int main(int argc, char *argv[]) {
             // who designed this function?
             token = strtok(NULL, " ");
         }
-
+        printf("%s", output_queue);
         free(command);
     }
     return 0;
