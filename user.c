@@ -27,10 +27,10 @@ User * user_new(
 }
 
 void user_print(User *self) {
-    printf("--------------------\n"
-           BOLD "name: " RESET "%s\n"
+    printf(BOLD "--------------------\n"
+                "name: " RESET "%s\n"
            BOLD "handle: " RESET "%s\n"
            BOLD "bio: " RESET "%s\n"
-           "--------------------\n",
+           BOLD "--------------------\n" RESET,
            self->name, self->handle, self->bio);
 }
