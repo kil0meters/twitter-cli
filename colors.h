@@ -1,0 +1,10 @@
+#define RESET   "\033[0m"   // reset
+#define BLACK   "\033[30m"  // black
+#define RED     "\033[31m"  // red
+#define GREEN   "\033[32m"  // green
+#define YELLOW  "\033[33m"  // yellow
+#define BLUE    "\033[34m"  // blue
+#define MAGENTA "\033[35m"  // magenta
+#define CYAN    "\033[36m"  // cyan
+#define WHITE   "\033[37m"  // white
+#define BOLD    "\033[1m"   // bold
