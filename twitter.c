@@ -73,6 +73,19 @@ void print_help(void) {
     );
 }
 
+/*
+    int command_errored_len = strlen(command_copy) - token_offset;
+    char *command_errored = (char*) malloc(command_errored_len);
+    memcpy(command_errored, command_copy + token_offset, command_errored_len);
+    command_errored[command_errored_len] = '\0';
+*/
+char *get_string_at_index(const char *src, int start, int len) {
+    char *res = malloc(len + 1);
+    memcpy(res, src + start, len);
+    res[len + 1] = '\0';
+    return res;
+}
+
 int main(int argc, char *argv[]) {
     /* char *api_key = readline(BOLD "Enter a Twitter API key: " RESET);
     if(test_api_key_fails(api_key)) {
@@ -94,7 +107,9 @@ int main(int argc, char *argv[]) {
     // flags, used to keep track of
     // what happened in previous iterations
     bool show;
+    bool search;
     bool toplevel;
+    bool inside_string;
     bool gpl;
     bool error;
 
@@ -104,6 +119,7 @@ int main(int argc, char *argv[]) {
     char *command;
     char *command_copy;
 
+    int string_start_len[2]; // the text contained in a string
     char *output_queue;
 
     // read-eval-print loop
@@ -117,32 +133,36 @@ int main(int argc, char *argv[]) {
 
         // reset flags
         show = false;
+        search = false;
         toplevel = true;
+        inside_string = false;
         gpl = false;
-        error = false;
         
         // create copy of command for error messages
-        command_copy = (char*) malloc(strlen(command));
+        command_copy = malloc(strlen(command));
         command_copy = strncpy(command_copy, command, strlen(command));
 
         char *token = strtok(command, " ");
         while (token != NULL) {
+            error = true;
             if(toplevel) {
-                bool executed_command = true;
                 if (!strcmp(token, "help")) {
                     print_help();
                     break;
                 } else if (!strcmp(token, "show")) {
                     show = true;
                 } else if (!strcmp(token, "search")) {
+                    search = true;
                 } else if (!strcmp(token, "gpl")) {
                     output_queue = gpl_snippit();
                     gpl = true;
+                } else if (!strcmp(token, "exit")) {
+                    return 0;
                 } else {
-                    executed_command = false;
+                    error = false;
                 }
 
-                if (executed_command) {
+                if (error) {
                     toplevel = false;
                     token_offset += strlen(token) + 1;
                     token = strtok(NULL, " ");
@@ -151,42 +171,54 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            bool command_not_executed = true;
-
-            if(gpl && command_not_executed) {
-                command_not_executed = false;
+            else if(gpl && error) {
+                error = false;
                 if (!strcmp(token, "warranty")) {
                     output_queue = gpl_warranty();
                 } else if (!strcmp(token, "conditions")) {
                     output_queue = gpl_terms_and_conditions();
                 } else {
-                    command_not_executed = true;
                     error = true;
                 }
             }
 
-            if (command_not_executed) {
-                command_not_executed = false;
+            else if(inside_string && error) {
+                string_start_len[1] = token_offset + strlen(token) - string_start_len[0] - 1;
+                error = false;
+
+                if (token[strlen(token) - 1] == '"') {
+                    inside_string = false;
+                    char *string_in_quotes = get_string_at_index(command_copy, string_start_len[0], string_start_len[1]);
+
+                    if (search) {
+                        printf("Searching for: " BOLD CYAN "%s\n" RESET, string_in_quotes);
+                    }
+                }
+            }
+
+            else if (error) {
+                error = false;
                 if (!strcmp(token, "trending") && show) {
-                    printf("trending\n");
+                    output_queue = "trending\n";
                     // break;
                 } else if (!strcmp(token, "me") && show) {
                     user_print(user);
                 } else if (token[0] == '@' && show) {
-                    printf("elon musk\n");
+                    output_queue = "elon musk\n";
+                } else if (token[0] == '"' && search) {
+                    string_start_len[0] = token_offset + 1;
+                    string_start_len[1] = strlen(token) - 2;
+                    inside_string = true;
                 } else {
-                    command_not_executed = true;
                     error = true;
                 }
             }
             
-            if (command_not_executed || error) {
+            if (error) {
                 if(token_offset > strlen(command_copy))
                     token_offset = strlen(command_copy);
                 if(toplevel)
                     token_offset = 0;
-                
-                
 
                 // int space_count = token_offset - strlen(token);
                 char spaces[token_offset + 1];
@@ -195,14 +227,8 @@ int main(int argc, char *argv[]) {
                 }
                 spaces[token_offset + 1] = '\0';
 
-                char *command_processed = (char*) malloc(token_offset);
-                memcpy(command_processed, command_copy, token_offset);
-                command_processed[token_offset] = '\0';
-
-                int command_errored_len = strlen(command_copy) - token_offset;
-                char *command_errored = (char*) malloc(command_errored_len);
-                memcpy(command_errored, command_copy + token_offset, command_errored_len);
-                command_errored[command_errored_len] = '\0';
+                char *command_processed = get_string_at_index(command_copy, 0, token_offset);
+                char *command_errored = get_string_at_index(command_copy, token_offset, strlen(command_copy) - token_offset);
 
                 printf(BOLD RED"error: " RESET "Invalid command\n"
                        "%s" BOLD RED "%s" RESET
@@ -217,7 +243,9 @@ int main(int argc, char *argv[]) {
             // who designed this function?
             token = strtok(NULL, " ");
         }
-        printf("%s", output_queue);
+
+        if (!error)
+            printf("%s", output_queue);
         free(command);
     }
     return 0;
