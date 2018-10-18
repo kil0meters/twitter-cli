@@ -1,3 +1,6 @@
+#ifndef USER_H_
+#define USER_H_
+
 typedef struct User {
     char *name;
     char *handle;
@@ -21,3 +24,5 @@ User * user_new(
 );
 
 void user_print(User *self);
+
+#endif
