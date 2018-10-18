@@ -11,5 +11,6 @@ typedef struct Tweet {
 } Tweet;
 
 void twitter_get_trending(User *user);
+char *twitter_search(char *search_string);
 
 #endif

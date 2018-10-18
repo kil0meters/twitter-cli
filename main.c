@@ -191,12 +191,13 @@ int main(int argc, char *argv[]) {
                 string_start_len[1] = token_offset + strlen(token) - string_start_len[0] - 1;
                 error = false;
 
+                // what to do with string object
                 if (token[strlen(token) - 1] == '"') {
                     inside_string = false;
-                    char *string_in_quotes = get_string_at_index(command_copy, string_start_len[0], string_start_len[1]);
 
                     if (search) {
-                        printf("Searching for: " BOLD CYAN "%s\n" RESET, string_in_quotes);
+                        char *string_in_quotes = get_string_at_index(command_copy, string_start_len[0], string_start_len[1]);
+                        output_queue = twitter_search(string_in_quotes);
                     }
                 }
             }
@@ -209,10 +210,14 @@ int main(int argc, char *argv[]) {
                     user_print(user);
                 } else if (token[0] == '@' && show) {
                     output_queue = "elon musk\n";
-                } else if (token[0] == '"' && search) {
+                } else if (token[0] == '"') {
                     string_start_len[0] = token_offset + 1;
                     string_start_len[1] = strlen(token) - 2;
                     inside_string = true;
+                    if (token[strlen(token) - 1] == '"') {
+                        char *string_in_quotes = get_string_at_index(command_copy, string_start_len[0], string_start_len[1]);
+                        output_queue = twitter_search(string_in_quotes);
+                    } 
                 } else {
                     error = true;
                 }
@@ -225,18 +230,17 @@ int main(int argc, char *argv[]) {
                 //     token_offset = 0;
 
                 // int space_count = token_offset - strlen(token);
-                char spaces[token_offset + 1];
+                char spaces[token_offset];
                 for(int i=0; i<token_offset; i++) {
                     spaces[i] = ' ';
                 }
-                spaces[token_offset + 1] = '\0';
 
                 char *command_processed = get_string_at_index(command_copy, 0, token_offset);
                 char *command_errored = get_string_at_index(command_copy, token_offset, strlen(command_copy) - token_offset);
 
                 printf(BOLD RED"error: " RESET "Invalid command\n"
-                       "%s" BOLD RED "%s" RESET
-                       BOLD "\n%s~^" RESET " encountered exception\n",
+                       "%s" BOLD RED "%s\n" RESET
+                       BOLD "%s~^" RESET " encountered exception\n",
                        command_processed, command_errored, spaces);
                 
                 break;

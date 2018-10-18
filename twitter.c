@@ -50,3 +50,10 @@ void twitter_get_trending(User *user) {
         curl_easy_setopt(curl, CURLOPT_URL, "https://twitter.com");
     }
 }
+
+char *twitter_search(char *search_string) {
+    int bufsize = 41 + strlen(search_string);
+    char *search = malloc(bufsize);
+    snprintf(search, bufsize, "Searching for: " BOLD CYAN "%s\n" RESET, search_string);
+    return search;
+}
