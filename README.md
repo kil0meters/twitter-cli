@@ -4,8 +4,9 @@ A command line client for Twitter.
 
 ## Dependencies 
 
+On Fedora:
 ```
-sudo dnf install curl-devel json-c-devel readline-devel liboauth-devel
+sudo dnf install gcc make curl-devel json-c-devel readline-devel liboauth-devel
 ```
 
 ## Building

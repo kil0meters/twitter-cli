@@ -28,63 +28,49 @@
 #include <readline/readline.h>
 
 #include "colors.h"
-#include "user.h"
-#include "twitter.h"
 #include "gpl.h"
+#include "repl.h"
+#include "strtools.h"
 
-char *get_string_at_index(const char *src, int start, int len) {
-    char *res = malloc(len + 1);
-    memcpy(res, src + start, len);
-    res[len + 1] = '\0';
-    return res;
-}
-
-void print_help(void) {
+GenericObject *print_help(void) {
     printf(
-        BOLD "USAGE\n" RESET
-        "   show me\n"
-        "   show @elonmusk\n"
         BOLD "COMMANDS\n" RESET
-        "   show     displays something on the screen\n"
         "   search   searches for a query\n"
         "   gpl      outputs information about the GNU Genneral Public License\n"
         "   help     shows this help message\n"
         "   exit     exits this application\n"
         BOLD "ALIASES\n" RESET
         "   trending gets the trending topics\n"
-        "   @{}      gets information about the user with a Twitter handle\n"
-        "   me       a shorthand for the account you are currently logged in as\n"
+        "   @{}      a Twitter user\n"
+        "   #{}      a hashtag\n"
     );
+    return NULL;
 }
 
-char *cat_strs(const char *src, const char *str) {
-    int bufsize = strlen(src) + strlen(str) + 1;
-    char *res = malloc(bufsize);
-    snprintf(res, bufsize, "%s%s", src, str);
-    return res;
+GenericObject *test_command(GenericObject *generic_string) {
+    printf("%s", generic_string->string);
+    return NULL;
+}
+
+GenericObject *twitter_search(GenericObject *generic_string) {
+    printf("SEARCHING FOR: " BOLD CYAN "%s\n", generic_string->string);
+    return NULL;
+}
+
+GenericObject *exit_application(void) {
+    exit(0);
+    return NULL;
 }
 
 int main(int argc, char *argv[]) {
-
-    // create user instance and set access token for development
-    User *user = user_new(
-        "kilometers",
-        "ki10meters",
-        "biography",
-        "https://meters.sh",
-        14,
-        89,
-        "asdfasdf"
-    );
-
     struct stat st = {0};
 
-    char *config_home = getenv("XDG_CONFIG_HOME");
+    /*char *config_home = getenv("XDG_CONFIG_HOME");
     if (config_home == NULL) {
         config_home = cat_strs(getenv("HOME"), "/.config/twitter-cli");
     }
     if (stat(config_home, &st) == -1)
-        mkdir(config_home, 0700);
+        mkdir(config_home, 0700);*/
 
     char *cache_home = getenv("XDG_CACHE_CONFIG");
     if (cache_home == NULL) {
@@ -95,6 +81,8 @@ int main(int argc, char *argv[]) {
 
     char *history_file_name = cat_strs(cache_home, "/history.log");
 
+    free(cache_home);
+
     FILE *history_file = fopen(history_file_name, "r");
     if (history_file) {
         char buffer[256];
@@ -103,158 +91,30 @@ int main(int argc, char *argv[]) {
             add_history(buffer);
         }
     }
-    // flags, used to keep track of
-    // what happened in previous iterations
-    bool show;
-    bool search;
-    bool toplevel;
-    bool inside_string;
-    bool gpl;
-    bool error;
+    free(history_file);
 
-    // used for error messages
-    int token_offset;
-
-    char *command;
-    char *command_copy;
-
-    int string_start_len[2]; // the text contained in a string
-    char *output_queue;
+    ReadEvalPrintLoop *repl = repl_new(8);
+    repl_add_command_requires_object(repl, "search", REPL_STRING, REPL_NULL, twitter_search);
+    repl_add_command_void(repl, "help", REPL_NULL, print_help);
+    repl_add_command_void(repl, "exit", REPL_NULL, exit_application); 
+    repl_add_command_void(repl, "gpl", REPL_NULL, gpl_snippit);
+    repl_add_command_void(repl, "gpl warranty", REPL_NULL, gpl_terms_and_conditions);
+    repl_add_command_void(repl, "gpl conditions", REPL_NULL, gpl_warranty);
 
     // read-eval-print loop
     while(true) {
-        command = readline(BOLD "twitter" GREEN " ) " RESET);
+        char *command = readline(BOLD "twitter" GREEN " ) " RESET);
 
         // add command to history
         FILE *history_file = fopen(history_file_name, "a");
         fprintf(history_file, cat_strs(command, "\n"));
         fclose(history_file);
+        
         add_history(command);
 
-        output_queue = "";
-
-        token_offset = 0;
-
-        // reset flags
-        show = false;
-        search = false;
-        toplevel = true;
-        inside_string = false;
-        gpl = false;
-        
-        // create copy of command for error messages
-        command_copy = malloc(strlen(command));
-        command_copy = strncpy(command_copy, command, strlen(command));
-
-        char *token = strtok(command, " ");
-        while (token != NULL) {
-            error = true;
-            if(toplevel) {
-                bool toplevel_complted = true;
-                if (!strcmp(token, "help")) {
-                    print_help();
-                    break;
-                } else if (!strcmp(token, "show")) {
-                    show = true;
-                } else if (!strcmp(token, "search")) {
-                    search = true;
-                } else if (!strcmp(token, "gpl")) {
-                    output_queue = gpl_snippit();
-                    gpl = true;
-                } else if (!strcmp(token, "exit")) {
-                    return 0;
-                } else {
-                    toplevel_complted = false;
-                }
-
-                if (toplevel_complted) {
-                    toplevel = false;
-                    token_offset += strlen(token) + 1;
-                    token = strtok(NULL, " ");
-                    
-                    continue; // go to next token
-                }
-            }
-
-            else if(gpl && error) {
-                error = false;
-                if (!strcmp(token, "warranty")) {
-                    output_queue = gpl_warranty();
-                } else if (!strcmp(token, "conditions")) {
-                    output_queue = gpl_terms_and_conditions();
-                } else {
-                    error = true;
-                }
-            }
-
-            else if(inside_string && error) {
-                string_start_len[1] = token_offset + strlen(token) - string_start_len[0] - 1;
-                error = false;
-
-                // what to do with string object
-                if (token[strlen(token) - 1] == '"') {
-                    inside_string = false;
-
-                    if (search) {
-                        char *string_in_quotes = get_string_at_index(command_copy, string_start_len[0], string_start_len[1]);
-                        output_queue = twitter_search(string_in_quotes);
-                    }
-                }
-            }
-
-            else if (error) {
-                error = false;
-                if (!strcmp(token, "trending") && show) {
-                    twitter_get_trending(user);
-                } else if (!strcmp(token, "me") && show) {
-                    user_print(user);
-                } else if (token[0] == '@' && show) {
-                    output_queue = "elon musk\n";
-                } else if (token[0] == '"') {
-                    string_start_len[0] = token_offset + 1;
-                    string_start_len[1] = strlen(token) - 2;
-                    inside_string = true;
-                    if (token[strlen(token) - 1] == '"') {
-                        char *string_in_quotes = get_string_at_index(command_copy, string_start_len[0], string_start_len[1]);
-                        output_queue = twitter_search(string_in_quotes);
-                    } 
-                } else {
-                    error = true;
-                }
-            }
-            
-            if (error) {
-                if(token_offset > strlen(command_copy))
-                    token_offset = strlen(command_copy);
-                // if(toplevel)
-                //     token_offset = 0;
-
-                // int space_count = token_offset - strlen(token);
-                char spaces[token_offset];
-                for(int i=0; i<token_offset; i++) {
-                    spaces[i] = ' ';
-                }
-
-                char *command_processed = get_string_at_index(command_copy, 0, token_offset);
-                char *command_errored = get_string_at_index(command_copy, token_offset, strlen(command_copy) - token_offset);
-
-                printf(BOLD RED"error: " RESET "Invalid command\n"
-                       "%s" BOLD RED "%s\n" RESET
-                       BOLD "%s~^" RESET " encountered exception\n",
-                       command_processed, command_errored, spaces);
-                
-                break;
-            }
-
-            token_offset += strlen(token) + 1;
-            // go to next token, tracked in internal variable of strtok
-            // who designed this function?
-            token = strtok(NULL, " ");
-        }
-
-        if (!error)
-            printf("%s", output_queue);
+        repl_process_input(repl, command);
         free(command);
     }
+    free(repl);
     return 0;
 }
