@@ -1,7 +1,7 @@
 CC=gcc
 CCFLAGS=-Wall
 LDFLAGS=-lcurl -lreadline -ljson-c -loauth
-SOURCES=$(wildcard *.c)
+SOURCES=$(wildcard src/*.c)
 OBJECTS=$(SOURCES:.c=.o)
 TARGET=twitter
 

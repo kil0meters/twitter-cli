@@ -2,6 +2,8 @@
 
 A command line client for Twitter.
 
+Create a backend in Python or something else that's fun.
+
 ## Dependencies 
 
 On Fedora:
