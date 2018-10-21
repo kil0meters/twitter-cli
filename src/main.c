@@ -32,6 +32,7 @@
 #include "repl.h"
 #include "strtools.h"
 #include "twitter.h"
+#include "server.h"
 
 GenericObject *print_help(void) {
     printf(
@@ -97,6 +98,7 @@ int main(int argc, char *argv[]) {
 
     ReadEvalPrintLoop *repl = repl_new(8);
     repl_add_command_requires_object(repl, "search", REPL_STRING, REPL_NULL, twitter_search);
+    repl_add_command_void(repl, "server", REPL_NULL, start_server);
     repl_add_command_void(repl, "login", REPL_NULL, get_authorization_link);
     repl_add_command_void(repl, "help", REPL_NULL, print_help);
     repl_add_command_void(repl, "exit", REPL_NULL, exit_application); 

@@ -8,7 +8,8 @@ Create a backend in Python or something else that's fun.
 
 On Fedora:
 ```
-sudo dnf install gcc make curl-devel json-c-devel readline-devel liboauth-devel
+sudo dnf install gcc make curl curl-devel json-c json-c-devel readline readline-devel \
+                 liboauth liboauth-devel libmicrohttpd libmicrohttpd-devel
 ```
 
 ## Building
