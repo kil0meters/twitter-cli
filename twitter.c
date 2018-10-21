@@ -9,9 +9,7 @@
 
 #include "repl.h"
 #include "colors.h"
-
-#define CONSUMER_KEY "sRgSP4MXpATJi9MTORIek7Nej"                            
-#define CONSUMER_SECRET "wDtjJbCOyVNAVQpgz8NqzmLTxJxG8MY3aOmKM0iIm4qY193gYy"
+#include "api_keys.h"
 
 #define REQUEST_TOKEN_URL "https://api.twitter.com/oauth/request_token"
 #define ACCESS_TOKEN_URL "https://api.twitter.com/oauth/access_token"
@@ -52,7 +50,7 @@ static size_t write_memory_callback(
 
 GenericObject *get_authorization_link(void) {
     CURL *curl = curl_easy_init();
-    CURLcode res;
+    CURLcode curl_code;
 
     // char *postfields = "oauth_callback=https%3A%2F%2Ftwitter.com";
     // 
@@ -73,14 +71,18 @@ GenericObject *get_authorization_link(void) {
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&chunk);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "twitter-cli/0.1");
 
-        res = curl_easy_perform(curl);
-        if (res != CURLE_OK) {
+        curl_code = curl_easy_perform(curl);
+
+        int http_code = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+        if (curl_code != CURLE_OK || http_code != 200) {
             printf(BOLD RED "error: " RESET "failed to request authentication token\n");
         }
         else {
             char *reply = chunk.memory;
 
-            // printf("HTTP reply: %s\n", reply);
+            printf("HTTP reply: %s\n", reply);
 
             int rc;
             char **rv = NULL;
@@ -103,11 +105,14 @@ GenericObject *get_authorization_link(void) {
             snprintf(authorization_url, 80, "https://api.twitter.com/oauth/authorize?oauth_token=%s", res_t_key);
 
             printf("Authorize the app: %s\n", authorization_url);
-            char *c = malloc(0);
+            /*char *c = malloc(0);
             while (c[0] != 'y' && c[0] != 'Y' && c[0] != 'n' && c[0] != 'N') { 
                 c = readline("Have you authorized the application? " CYAN "[Y\\n] " RESET);
-            }
-            if (c[0] == 'y' || c[0] == 'Y') {
+            } */
+
+            char *oauth_verifier = readline(CYAN "Enter the oauth_verifier: " RESET);
+
+            if (oauth_verifier ) {
                 printf(CYAN "Checking of API key is valid...\n" RESET);
                 sleep(1);
                 printf(RESET "\n" GREEN BOLD "CONFIRMED\n" RESET "You are now logged in to Twitter.\n");
