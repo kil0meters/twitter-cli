@@ -31,11 +31,13 @@
 #include "gpl.h"
 #include "repl.h"
 #include "strtools.h"
+#include "twitter.h"
 
 GenericObject *print_help(void) {
     printf(
         BOLD "COMMANDS\n" RESET
         "   search   searches for a query\n"
+        "   login    needed to authenticate twitter-cli\n"
         "   gpl      outputs information about the GNU Genneral Public License\n"
         "   help     shows this help message\n"
         "   exit     exits this application\n"
@@ -53,7 +55,7 @@ GenericObject *test_command(GenericObject *generic_string) {
 }
 
 GenericObject *twitter_search(GenericObject *generic_string) {
-    printf("SEARCHING FOR: " BOLD CYAN "%s\n", generic_string->string);
+    printf("SEARCHING FOR: " BOLD CYAN "%s\n" RESET, generic_string->string);
     return NULL;
 }
 
@@ -85,16 +87,17 @@ int main(int argc, char *argv[]) {
 
     FILE *history_file = fopen(history_file_name, "r");
     if (history_file) {
-        char buffer[256];
+        char buffer[256]; // probably large enough for now
         while(fgets(buffer, 256, history_file)) {
             buffer[strcspn(buffer, "\n")] = 0;
             add_history(buffer);
         }
     }
-    free(history_file);
+    fclose(history_file);
 
     ReadEvalPrintLoop *repl = repl_new(8);
     repl_add_command_requires_object(repl, "search", REPL_STRING, REPL_NULL, twitter_search);
+    repl_add_command_void(repl, "login", REPL_NULL, get_authorization_link);
     repl_add_command_void(repl, "help", REPL_NULL, print_help);
     repl_add_command_void(repl, "exit", REPL_NULL, exit_application); 
     repl_add_command_void(repl, "gpl", REPL_NULL, gpl_snippit);
@@ -104,17 +107,19 @@ int main(int argc, char *argv[]) {
     // read-eval-print loop
     while(true) {
         char *command = readline(BOLD "twitter" GREEN " ) " RESET);
-
-        // add command to history
-        FILE *history_file = fopen(history_file_name, "a");
-        fprintf(history_file, cat_strs(command, "\n"));
-        fclose(history_file);
         
-        add_history(command);
+        if (command[0] != '\0') { // only process command if it's not empty
+            // add command to history
+            FILE *history_file = fopen(history_file_name, "a");
+            fprintf(history_file, cat_strs(command, "\n"));
+            fclose(history_file);
+            
+            add_history(command);
 
-        repl_process_input(repl, command);
+            repl_process_input(repl, command);
+        }
         free(command);
     }
     free(repl);
-    return 0;
+    return 0; 
 }
