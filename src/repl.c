@@ -113,7 +113,7 @@ void print_error_message(int token_offset, char *input, const char *error_messag
     spaces[token_offset] = '\0';
 
     char *input_processed = get_string_at_index(input, 0, token_offset);
-    char *input_errored = get_string_at_index(input, token_offset, strlen(input) - token_offset);
+    char *input_errored = get_string_at_index(input, token_offset, strlen(input) - token_offset+1);
 
     printf(BOLD RED "error: " RESET "A problem occured.\n"
            "%s" BOLD RED "%s\n" RESET
@@ -143,6 +143,7 @@ void repl_process_input(ReadEvalPrintLoop *repl, char *input) {
     char *prev_token;
     while (token != NULL) {
         token_offset += strlen(token) + 1;
+        
         if (function_argument_type == REPL_NULL) {
             for (int i = 0; i < repl->set_commands; i++) {
                 if (!strcmp(repl->commands[i].command, get_string_at_index(input, 0, token_offset-1))) {
@@ -222,7 +223,8 @@ void repl_process_input(ReadEvalPrintLoop *repl, char *input) {
     }
 
 execute_function:
-    token_offset = token_offset - strlen(prev_token) - 1;
+    if (strlen(prev_token) > 0)
+        token_offset = token_offset - strlen(prev_token) - 1;
     token = strtok(NULL, " ");
     if (token != NULL || (breakpoint > 0 && executed_command == false)) {
         print_error_message(breakpoint, input, "invalid options");
@@ -231,7 +233,7 @@ execute_function:
         print_error_message(token_offset, input, "expected object");
     }
     else if (function_argument_type == REPL_NULL && (breakpoint == 0 && executed_command == false)) {
-        print_error_message(token_offset, input, "invalid command");
+        print_error_message(0, input, "invalid command");
     }
     else if (function_argument_type != REPL_NULL) {
         (function_to_execute)(function_argument);

@@ -15,12 +15,12 @@ GenericObject *authorize_account(void) {
     }
     else {
         if (!generate_oauth_keys()) {
-            const char *oauth_token = get_oauth_key();
+            const char *oauth_key = get_oauth_key();
             const char *oauth_secret = get_oauth_key_secret();
 
             char *authorization_url = malloc(80);
             snprintf(authorization_url, 80,
-                     "https://api.twitter.com/oauth/authorize?oauth_token=%s", oauth_token);
+                     "https://api.twitter.com/oauth/authorize?oauth_token=%s", oauth_key);
 
             printf("Authorize the app: %s\n", authorization_url);
             

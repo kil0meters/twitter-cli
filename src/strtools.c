@@ -5,7 +5,7 @@
 char *get_string_at_index(const char *src, int start, int len) {
     char *res = malloc(len + 1);
     memcpy(res, src + start, len);
-    res[len + 1] = '\0';
+    res[len] = '\0';
     return res;
 }
 
