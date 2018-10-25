@@ -1,9 +1,13 @@
 #ifndef SERVER_H_
 #define SERVER_H_
 
-GenericObject *start_server(void);
+int generate_oauth_keys(void);
 
-typedef struct TwitterCLIWebAPI {
-} TwitterCLIWebAPI;
+char *get_oauth_key(void);
+char *get_oauth_key_secret(void);
+char *get_oauth_verifier(void);
+
+int server_start(void);
+void server_stop(void);
 
 #endif

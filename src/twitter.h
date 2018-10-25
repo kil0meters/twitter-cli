@@ -3,6 +3,6 @@
 
 #include "repl.h"
 
-GenericObject *get_authorization_link(void);
+GenericObject *authorize_account(void);
 
 #endif

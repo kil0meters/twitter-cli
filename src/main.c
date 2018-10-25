@@ -65,6 +65,8 @@ GenericObject *exit_application(void) {
     return NULL;
 }
 
+#include <oauth.h>
+
 int main(int argc, char *argv[]) {
     struct stat st = {0};
 
@@ -96,10 +98,9 @@ int main(int argc, char *argv[]) {
     }
     fclose(history_file);
 
-    ReadEvalPrintLoop *repl = repl_new(8);
+    ReadEvalPrintLoop *repl = repl_new(7);
     repl_add_command_requires_object(repl, "search", REPL_STRING, REPL_NULL, twitter_search);
-    repl_add_command_void(repl, "server", REPL_NULL, start_server);
-    repl_add_command_void(repl, "login", REPL_NULL, get_authorization_link);
+    repl_add_command_void(repl, "login", REPL_NULL, authorize_account);
     repl_add_command_void(repl, "help", REPL_NULL, print_help);
     repl_add_command_void(repl, "exit", REPL_NULL, exit_application); 
     repl_add_command_void(repl, "gpl", REPL_NULL, gpl_snippit);
@@ -117,11 +118,11 @@ int main(int argc, char *argv[]) {
             fclose(history_file);
             
             add_history(command);
-
+            
             repl_process_input(repl, command);
         }
         free(command);
     }
     free(repl);
-    return 0; 
+    return 0;
 }

@@ -2,7 +2,7 @@ TARGET   = twitter
 
 CC       = gcc
 # compiling flags here
-CFLAGS   = -std=c99 -Wall -I.
+CFLAGS   = -std=gnu99 -Wall -I.
 
 LINKER   = gcc
 # linking flags here
@@ -21,20 +21,20 @@ rm       = rm -f
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	@$(LINKER) $(OBJECTS) $(LFLAGS) -o $@
-	@echo "Linking complete!"
+	@echo "Linking complete."
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 	@$(CC) $(CFLAGS) -c $< -o $@
-	@echo "Compiled "$<" successfully!"
+	@echo "Compiled "$<""
 
 .PHONY: clean
 clean:
 	@$(rm) $(OBJECTS)
-	@echo "Cleanup complete!"
+	@echo "Cleanup complete."
 
 .PHONY: remove
 remove: clean
 	@$(rm) $(BINDIR)/$(TARGET)
-	@echo "Executable removed!"
+	@echo "Executable removed."
 
 
