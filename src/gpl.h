@@ -1,5 +1,5 @@
 #ifndef GPL_H_
-#define GPL_H_ 
+#define GPL_H_
 
 #include "repl.h"
 

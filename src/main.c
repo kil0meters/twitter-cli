@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     repl_add_command_requires_object(repl, "search", REPL_STRING, REPL_NULL, twitter_search);
     repl_add_command_void(repl, "login", REPL_NULL, authorize_account);
     repl_add_command_void(repl, "help", REPL_NULL, print_help);
-    repl_add_command_void(repl, "exit", REPL_NULL, exit_application); 
+    repl_add_command_void(repl, "exit", REPL_NULL, exit_application);
     repl_add_command_void(repl, "gpl", REPL_NULL, gpl_snippit);
     repl_add_command_void(repl, "gpl warranty", REPL_NULL, gpl_terms_and_conditions);
     repl_add_command_void(repl, "gpl conditions", REPL_NULL, gpl_warranty);
@@ -110,15 +110,15 @@ int main(int argc, char *argv[]) {
     // read-eval-print loop
     while(true) {
         char *command = readline(BOLD "twitter" GREEN " ) " RESET);
-        
+
         if (command[0] != '\0') { // only process command if it's not empty
             // add command to history
             FILE *history_file = fopen(history_file_name, "a");
             fprintf(history_file, cat_strs(command, "\n"));
             fclose(history_file);
-            
+
             add_history(command);
-            
+
             repl_process_input(repl, command);
         }
         free(command);

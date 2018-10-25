@@ -91,7 +91,7 @@ int generate_oauth_keys(void) {
             printf(BOLD RED "error: " RESET "failed to request token\n");
             return 1;
         }
-        
+
         char *reply = chunk.memory;
 
         int rc;
@@ -133,7 +133,7 @@ static int answer_to_connection(
     const char *upload_data,
     size_t *upload_sata_size,
     void **con_cls
-) { 
+) {
     // printf("New %s request for %s using version %s\n", method, url, version);
 
     char *page = NULL;
@@ -148,7 +148,7 @@ static int answer_to_connection(
         // upon the next request
         oauth_verifier = strdup(_oauth_verifier);
     }
-    
+
     if (page == NULL)
         page = "twitter-cli v0.1";
 

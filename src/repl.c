@@ -143,7 +143,7 @@ void repl_process_input(ReadEvalPrintLoop *repl, char *input) {
     char *prev_token;
     while (token != NULL) {
         token_offset += strlen(token) + 1;
-        
+
         if (function_argument_type == REPL_NULL) {
             for (int i = 0; i < repl->set_commands; i++) {
                 if (!strcmp(repl->commands[i].command, get_string_at_index(input, 0, token_offset-1))) {

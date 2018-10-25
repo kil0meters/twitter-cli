@@ -23,12 +23,12 @@ GenericObject *authorize_account(void) {
                      "https://api.twitter.com/oauth/authorize?oauth_token=%s", oauth_key);
 
             printf("Authorize the app: %s\n", authorization_url);
-            
+
             char *c = malloc(0);
-            while (c[0] != 'y' && c[0] != 'Y' && c[0] != 'n' && c[0] != 'N') { 
+            while (c[0] != 'y' && c[0] != 'Y' && c[0] != 'n' && c[0] != 'N') {
                 c = readline("Have you authorized the application? " CYAN "[Y\\n] " RESET);
             }
-            
+
             if (c[0] == 'y' || c[0] == 'Y') {
                 const char *oauth_verifier = get_oauth_verifier();
 
