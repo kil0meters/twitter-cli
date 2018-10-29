@@ -16,6 +16,7 @@
 #include "repl.h"
 #include "api_keys.h"
 #include "colors.h"
+#include "requests.h"
 
 #define PORT 3456
 
@@ -28,35 +29,6 @@ const char *oauth_key_secret = NULL;
 const char *oauth_verifier = NULL;
 
 struct MHD_Daemon *web_daemon;
-
-struct MemoryStruct {
-    char *memory;
-    size_t size;
-};
-
-static size_t write_memory_callback(
-    void *contents,
-    size_t size,
-    size_t nmemb,
-    void *userp
-) {
-    size_t realsize = size * nmemb;
-    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-
-    char *ptr = realloc(mem->memory, mem->size + realsize + 1);
-    if (ptr == NULL) {
-        // this should never happen -- out of memory
-        printf(BOLD RED "error: " RESET "OUT OF MEMORY.\n");
-        exit(1);
-    }
-
-    mem->memory = ptr;
-    memcpy(&(mem->memory[mem->size]), contents, realsize);
-    mem->size += realsize;
-    mem->memory[mem->size] = 0;
-
-    return realsize;
-}
 
 // sets oauth_key and oauth_key_secret
 // returns 1 if there was a failure

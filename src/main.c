@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -33,6 +32,7 @@
 #include "strtools.h"
 #include "twitter.h"
 #include "server.h"
+#include "xdg_dirs.h"
 
 GenericObject *print_help(void) {
     printf(
@@ -65,27 +65,30 @@ GenericObject *exit_application(void) {
     return NULL;
 }
 
-#include <oauth.h>
+static char *check_for_login(void) {
+    char *fname = cat_strs(xdg_config_home(), "/twitter_authentication");
+    FILE *oauth_file = fopen(fname, "r");
+
+    // if the file doesn't exist, return null
+    if (oauth_file == NULL)
+        return NULL;
+
+    // ...otherwise return the contents of the file
+    char *buffer = NULL;
+    size_t length;
+
+    ssize_t bytes_read = getdelim(&buffer, &length, '\0', oauth_file);
+
+    fclose(oauth_file);
+    if (bytes_read != -1) {
+        return buffer;
+    }
+    return NULL;
+}
 
 int main(int argc, char *argv[]) {
-    struct stat st = {0};
-
-    /*char *config_home = getenv("XDG_CONFIG_HOME");
-    if (config_home == NULL) {
-        config_home = cat_strs(getenv("HOME"), "/.config/twitter-cli");
-    }
-    if (stat(config_home, &st) == -1)
-        mkdir(config_home, 0700);*/
-
-    char *cache_home = getenv("XDG_CACHE_CONFIG");
-    if (cache_home == NULL) {
-        cache_home = cat_strs(getenv("HOME"), "/.cache/twitter-cli");
-    }
-    if (stat(cache_home, &st) == -1)
-        mkdir(cache_home, 0700);
-
+    char *cache_home = xdg_cache_home();
     char *history_file_name = cat_strs(cache_home, "/history.log");
-
     free(cache_home);
 
     FILE *history_file = fopen(history_file_name, "r");
@@ -98,6 +101,21 @@ int main(int argc, char *argv[]) {
     }
     fclose(history_file);
 
+    char *oauth_token;
+    char *oauth_token_secret;
+
+    char *oauth_keys = check_for_login();
+    if (oauth_keys != NULL) {
+        oauth_token = strsep(&oauth_keys, "\n");
+        oauth_token_secret = strsep(&oauth_keys, "\n");
+
+        TwitterUser *logged_in_account = twitter_get_self(oauth_token, oauth_token_secret);
+        const char *username = logged_in_account->username;
+
+        printf(BOLD GREEN "Logged in as: " RESET "%s\n", username);
+    }
+
+    // TODO: add argument for "requires authentication"
     ReadEvalPrintLoop *repl = repl_new(7);
     repl_add_command_requires_object(repl, "search", REPL_STRING, REPL_NULL, twitter_search);
     repl_add_command_void(repl, "login", REPL_NULL, authorize_account);
