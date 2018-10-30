@@ -13,4 +13,9 @@ size_t write_memory_callback(
     void *userp
 );
 
+char *http_request(
+    const char *url,
+    const char *postfields
+);
+
 #endif

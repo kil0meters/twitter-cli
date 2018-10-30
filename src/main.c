@@ -110,9 +110,11 @@ int main(int argc, char *argv[]) {
         oauth_token_secret = strsep(&oauth_keys, "\n");
 
         TwitterUser *logged_in_account = twitter_get_self(oauth_token, oauth_token_secret);
-        const char *username = logged_in_account->username;
 
-        printf(BOLD GREEN "Logged in as: " RESET "%s\n", username);
+        if (logged_in_account != NULL) {
+            const char *username = logged_in_account->username;
+            printf(BOLD GREEN "Logged in as: " RESET "%s\n", username);
+        }
     }
 
     // TODO: add argument for "requires authentication"

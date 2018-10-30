@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include <curl/curl.h>
+#include <json-c/json.h>
 #include <oauth.h>
 #include <microhttpd.h>
 
@@ -34,55 +35,29 @@ struct MHD_Daemon *web_daemon;
 // returns 1 if there was a failure
 int generate_oauth_keys(void) {
     char *postargs = NULL;
-    char *req_url = oauth_sign_url2(REQUEST_TOKEN_URL,
-                                    &postargs, OA_HMAC, "POST",
-                                    CONSUMER_KEY, CONSUMER_SECRET,
-                                    NULL, NULL);
+    oauth_sign_url2(REQUEST_TOKEN_URL,
+                    &postargs, OA_HMAC, "POST",
+                    CONSUMER_KEY, CONSUMER_SECRET,
+                    NULL, NULL);
 
-    struct MemoryStruct chunk;
-    chunk.memory = malloc(1);
-    chunk.size = 0;
+    char *content = http_request(REQUEST_TOKEN_URL, postargs);
 
-    CURL *curl = curl_easy_init();
-    CURLcode curl_code;
-
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, req_url);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postargs);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&chunk);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_callback);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, "twitter-cli/0.1");
-
-        curl_code = curl_easy_perform(curl);
-
-        long http_code = 0;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-        // http_code = 1;
-
-        if (curl_code != CURLE_OK || http_code != 200) {
-            printf(BOLD RED "error: " RESET "failed to request token\n");
-            return 1;
-        }
-
-        char *reply = chunk.memory;
-
-        int rc;
-        char **rv = NULL;
-
-        rc = oauth_split_url_parameters(reply, &rv);
-        qsort(rv, rc, sizeof(char *), oauth_cmpstringp);
-        if (rc == 3
-            && !strncmp(rv[1], "oauth_token=", 11)
-            && !strncmp(rv[2], "oauth_token_secret=", 18)
-        ) {
-            oauth_key = strdup(&(rv[1][12]));
-            oauth_key_secret = strdup(&(rv[2][19]));
-        }
-    } else
+    if (content == NULL)
         return 1;
-    // free(chunk.memory);
-    curl_easy_cleanup(curl);
-    curl_global_cleanup();
+
+    int rc;
+    char **rv = NULL;
+
+    rc = oauth_split_url_parameters(content, &rv);
+    qsort(rv, rc, sizeof(char *), oauth_cmpstringp);
+    if (rc == 3
+        && !strncmp(rv[1], "oauth_token=", 11)
+        && !strncmp(rv[2], "oauth_token_secret=", 18)
+    ) {
+        oauth_key = strdup(&(rv[1][12]));
+        oauth_key_secret = strdup(&(rv[2][19]));
+    }
+
     return 0;
 }
 
